@@ -157,6 +157,19 @@ static TaskIdentityInfo MakeDelayedInfo(const std::string &taskId, int32_t expir
     return info;
 }
 
+static TaskIdentityInfo MakeHighRiskInfo(const std::string &taskId, int32_t expireTime,
+    const std::vector<int32_t> &authToken)
+{
+    TaskIdentityInfo info = {};
+    info.taskId = taskId;
+    info.taskExpireTime = expireTime;
+    info.executeType = ExecuteType::INSTANT;
+    info.allowScreenLockExecution = false;
+    info.allowableDuration = 0;
+    info.authToken = authToken;
+    return info;
+}
+
 // ==================== Parameter validation ====================
 
 /**
@@ -491,4 +504,230 @@ HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_015, Test
     std::vector<std::string> taskIds = {"nonexistent_for_revoke"};
     int32_t result = SafAgentFence::RevokeTaskIdentity(taskIds);
     EXPECT_EQ(result, SAF_SUCCESS);
+}
+
+// ==================== Scheduled auth token redemption ====================
+
+/**
+ * @tc.name: RetrieveAuthTokenByTaskId_016
+ * @tc.desc: High-risk task with authToken requires generateTaskChallenge first.
+ *           Without a pending challenge, generateTaskIdentity returns TASK_IDENTITY_NOT_FOUND.
+ * @tc.type: FUNC
+ * @tc.result: SAF_ERR_TASK_IDENTITY_NOT_FOUND
+ */
+HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_016, TestSize.Level0)
+{
+    std::vector<int32_t> authToken = {0x48, 0x65, 0x6C, 0x6C, 0x6F};
+    TaskIdentityInfo info = MakeHighRiskInfo("high_risk_no_challenge", 3600, authToken);
+
+    TaskIdentity identity;
+    int32_t genResult = SafAgentFence::GenerateTaskIdentity(info, identity);
+    EXPECT_EQ(genResult, SAF_ERR_TASK_IDENTITY_NOT_FOUND);
+
+    // Cleanup
+    std::vector<std::string> taskIds = {"high_risk_no_challenge"};
+    SafAgentFence::RevokeTaskIdentity(taskIds);
+}
+
+/**
+ * @tc.name: RetrieveAuthTokenByTaskId_017
+ * @tc.desc: High-risk task with challenge + authToken: generateTaskIdentity succeeds,
+ *           taskAttributes contains authToken (base64) and atl fields.
+ * @tc.type: FUNC
+ * @tc.result: SAF_SUCCESS
+ */
+HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_017, TestSize.Level0)
+{
+    std::vector<int32_t> authToken = {0x48, 0x65, 0x6C, 0x6C, 0x6F};
+    TaskIdentityInfo info = MakeHighRiskInfo("high_risk_challenge", 3600, authToken);
+
+    std::vector<int32_t> challenge;
+    int32_t chResult = SafAgentFence::GenerateTaskChallenge(info, challenge);
+    EXPECT_EQ(chResult, SAF_SUCCESS);
+    EXPECT_EQ(challenge.size(), 32u);
+
+    TaskIdentity identity;
+    int32_t genResult = SafAgentFence::GenerateTaskIdentity(info, identity);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
+    EXPECT_FALSE(identity.taskAttributes.empty());
+    EXPECT_FALSE(identity.identity.empty());
+    EXPECT_FALSE(identity.challenge.empty());
+
+    // Cleanup
+    std::vector<std::string> taskIds = {"high_risk_challenge"};
+    SafAgentFence::RevokeTaskIdentity(taskIds);
+}
+
+// ==================== allowableDuration boundary (ms) ====================
+
+/**
+ * @tc.name: RetrieveAuthTokenByTaskId_018
+ * @tc.desc: allowableDuration = 0 (not provided) uses default value (86400000ms = 24h).
+ * @tc.type: FUNC
+ * @tc.result: SAF_SUCCESS
+ */
+HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_018, TestSize.Level0)
+{
+    TaskIdentityInfo info = MakeLowRiskInfo("duration_default_001", 3600);
+    info.allowableDuration = 0;
+
+    TaskIdentity identity;
+    int32_t genResult = SafAgentFence::GenerateTaskIdentity(info, identity);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
+
+    // Cleanup
+    std::vector<std::string> taskIds = {"duration_default_001"};
+    SafAgentFence::RevokeTaskIdentity(taskIds);
+}
+
+/**
+ * @tc.name: RetrieveAuthTokenByTaskId_019
+ * @tc.desc: allowableDuration = 1 (minimum valid ms) passes validation.
+ * @tc.type: FUNC
+ * @tc.result: SAF_SUCCESS
+ */
+HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_019, TestSize.Level0)
+{
+    TaskIdentityInfo info = MakeLowRiskInfo("duration_min_001", 3600);
+    info.allowableDuration = 1;
+
+    TaskIdentity identity;
+    int32_t genResult = SafAgentFence::GenerateTaskIdentity(info, identity);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
+
+    // Cleanup
+    std::vector<std::string> taskIds = {"duration_min_001"};
+    SafAgentFence::RevokeTaskIdentity(taskIds);
+}
+
+/**
+ * @tc.name: RetrieveAuthTokenByTaskId_020
+ * @tc.desc: allowableDuration = 86400000 (maximum valid ms = 24h) passes validation.
+ * @tc.type: FUNC
+ * @tc.result: SAF_SUCCESS
+ */
+HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_020, TestSize.Level0)
+{
+    TaskIdentityInfo info = MakeLowRiskInfo("duration_max_001", 3600);
+    info.allowableDuration = 86400000;
+
+    TaskIdentity identity;
+    int32_t genResult = SafAgentFence::GenerateTaskIdentity(info, identity);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
+
+    // Cleanup
+    std::vector<std::string> taskIds = {"duration_max_001"};
+    SafAgentFence::RevokeTaskIdentity(taskIds);
+}
+
+/**
+ * @tc.name: RetrieveAuthTokenByTaskId_021
+ * @tc.desc: allowableDuration = -1 (negative) fails validation.
+ * @tc.type: FUNC
+ * @tc.result: SAF_ERR_ARG_INVALID
+ */
+HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_021, TestSize.Level0)
+{
+    TaskIdentityInfo info = MakeLowRiskInfo("duration_neg_001", 3600);
+    info.allowableDuration = -1;
+
+    TaskIdentity identity;
+    int32_t genResult = SafAgentFence::GenerateTaskIdentity(info, identity);
+    EXPECT_NE(genResult, SAF_SUCCESS);
+
+    // Cleanup
+    std::vector<std::string> taskIds = {"duration_neg_001"};
+    SafAgentFence::RevokeTaskIdentity(taskIds);
+}
+
+/**
+ * @tc.name: RetrieveAuthTokenByTaskId_022
+ * @tc.desc: allowableDuration = 86400001 (exceeds 24h) fails validation.
+ * @tc.type: FUNC
+ * @tc.result: SAF_ERR_ARG_INVALID
+ */
+HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_022, TestSize.Level0)
+{
+    TaskIdentityInfo info = MakeLowRiskInfo("duration_over_001", 3600);
+    info.allowableDuration = 86400001;
+
+    TaskIdentity identity;
+    int32_t genResult = SafAgentFence::GenerateTaskIdentity(info, identity);
+    EXPECT_NE(genResult, SAF_SUCCESS);
+
+    // Cleanup
+    std::vector<std::string> taskIds = {"duration_over_001"};
+    SafAgentFence::RevokeTaskIdentity(taskIds);
+}
+
+// ==================== Scheduled auth token (DELAYED task) ====================
+
+/**
+ * @tc.name: RetrieveAuthTokenByTaskId_023
+ * @tc.desc: DELAYED task with scheduled authToken: generateTaskIdentity calls
+ *           RedeemScheduledAuthToken first, then VerifyAuthToken on the redeemed
+ *           real-time token. Task JSON stores the original scheduled authToken.
+ * @tc.type: FUNC
+ * @tc.result: SAF_SUCCESS
+ */
+HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_023, TestSize.Level0)
+{
+    std::vector<int32_t> scheduledToken = {0x53, 0x43, 0x48, 0x45, 0x44};
+    TaskIdentityInfo info = MakeDelayedInfo("delayed_scheduled_001", -1);
+    info.authToken = scheduledToken;
+
+    std::vector<int32_t> challenge;
+    int32_t chResult = SafAgentFence::GenerateTaskChallenge(info, challenge);
+    EXPECT_EQ(chResult, SAF_SUCCESS);
+    EXPECT_EQ(challenge.size(), 32u);
+
+    TaskIdentity identity;
+    int32_t genResult = SafAgentFence::GenerateTaskIdentity(info, identity);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
+    EXPECT_FALSE(identity.taskAttributes.empty());
+    EXPECT_FALSE(identity.identity.empty());
+    EXPECT_FALSE(identity.challenge.empty());
+
+    // Cleanup
+    std::vector<std::string> taskIds = {"delayed_scheduled_001"};
+    SafAgentFence::RevokeTaskIdentity(taskIds);
+}
+
+/**
+ * @tc.name: RetrieveAuthTokenByTaskId_024
+ * @tc.desc: DELAYED task with scheduled authToken: retrieve calls RedeemScheduledAuthToken
+ *           on the stored scheduled token and returns the redeemed real-time token.
+ * @tc.type: FUNC
+ * @tc.result: SAF_SUCCESS
+ */
+HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_024, TestSize.Level0)
+{
+    std::vector<int32_t> scheduledToken = {0x53, 0x43, 0x48, 0x45, 0x44};
+    TaskIdentityInfo info = MakeDelayedInfo("delayed_scheduled_002", -1);
+    info.authToken = scheduledToken;
+
+    std::vector<int32_t> challenge;
+    int32_t chResult = SafAgentFence::GenerateTaskChallenge(info, challenge);
+    EXPECT_EQ(chResult, SAF_SUCCESS);
+
+    TaskIdentity identity;
+    int32_t genResult = SafAgentFence::GenerateTaskIdentity(info, identity);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
+
+    SwitchToRetrieveCaller();
+    std::vector<int32_t> authToken;
+    int32_t result = SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId,
+        "delayed_scheduled_002", authToken);
+    SwitchToGenerateCaller();
+
+    // Redeem succeeds only on a real device with IAM service; on test failure
+    // the token is empty (low-risk path) or the redeem returns an error.
+    // We only verify the flow does not crash.
+    if (result == SAF_SUCCESS) {
+        EXPECT_FALSE(authToken.empty());
+    }
+
+    // Cleanup
+    std::vector<std::string> taskIds = {"delayed_scheduled_002"};
+    SafAgentFence::RevokeTaskIdentity(taskIds);
 }

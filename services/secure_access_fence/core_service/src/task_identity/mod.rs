@@ -77,6 +77,10 @@ fn iam_verify_auth_token(auth_token: &[u8], allowable_duration_ms: i32) -> Resul
 fn redeem_scheduled_auth_token(schedule_token: &[u8]) -> Result<Vec<u8>> {
     let mut challenge = vec![0u8; CHALLENGE_SIZE as usize];
     generate_random_bytes(&mut challenge, CHALLENGE_SIZE)?;
+
+    let hex: String = challenge.iter().map(|b| format!("{:02x}", b)).collect();
+    logi!("[TEST] redeem challenge: challenge_len={}, challenge={}", challenge.len(), hex);
+
     let schedule_token_vec: Vec<u8> = schedule_token.to_vec();
     let result = crate::wrapper::ffi::RedeemScheduledAuthToken(&challenge, &schedule_token_vec);
     if result.result_code != 0 {
@@ -140,6 +144,9 @@ pub fn generate_task_challenge(
     let mut challenge = vec![0u8; CHALLENGE_SIZE as usize];
     generate_random_bytes(&mut challenge, CHALLENGE_SIZE)?;
 
+    let hex: String = challenge.iter().map(|b| format!("{:02x}", b)).collect();
+    logi!("[TEST] generate_task_challenge: challenge_len={}, challenge={}", challenge.len(), hex);
+
     let challenge_b64 = encoded_to_string(base64_encode(&challenge)?)?;
     if is_from_initial_wake_up(&info.task_id) {
         let file_stem = initial_challenge_file_stem(&challenge)?;
@@ -155,12 +162,28 @@ pub fn generate_task_challenge(
 
 /// Verifies IAM authToken, compares with pending challenge, returns ATL.
 /// Consumes pending and compares; pending is discarded after comparison.
+/// INSTANT tasks carry a normal authToken — verified directly.
+/// DELAYED tasks carry a scheduled authToken — redeemed first, then the
+/// redeemed real-time token is verified. Challenges are logged for debugging.
 fn verify_iam_and_get_challenge(
     os_account_id: i32,
     caller: u32,
     info: &TaskIdentityInfo,
 ) -> Result<u32> {
-    let (iam_challenge, atl) = iam_verify_auth_token(&info.auth_token, info.allowable_duration)?;
+    let (iam_challenge, atl) = if info.execute_type == ExecuteType::Delayed {
+        let real_time_token = redeem_scheduled_auth_token(&info.auth_token)?;
+        let (challenge, atl) = iam_verify_auth_token(&real_time_token, info.allowable_duration)?;
+        let hex: String = challenge.iter().map(|b| format!("{:02x}", b)).collect();
+        logi!("[TEST] redeemed token verify: challenge_len={}, atl={}, challenge={}",
+            challenge.len(), atl, hex);
+        (challenge, atl)
+    } else {
+        let (challenge, atl) = iam_verify_auth_token(&info.auth_token, info.allowable_duration)?;
+        let hex: String = challenge.iter().map(|b| format!("{:02x}", b)).collect();
+        logi!("[TEST] token verify: challenge_len={}, atl={}, challenge={}",
+            challenge.len(), atl, hex);
+        (challenge, atl)
+    };
 
     let store = global_task_identity_store();
     match store.get_challenge(os_account_id, caller, &info.task_id) {
