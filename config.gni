@@ -21,6 +21,9 @@ declare_args() {
   asset_build_mode = "full"
   # the config of privacy computation
   asset_enable_privacy_computation_config = ""
+  # whether support privacy computation ability. When disabled, privacy computation
+  # NAPI interfaces return PRIVACY_COMPUTATION_UNAVAILABLE to JS callers.
+  asset_privacy_computation_supported = true
 
   if (is_emulator) {
     not_emulator = false

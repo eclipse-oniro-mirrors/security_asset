@@ -1,7 +1,7 @@
 # ASSET 服务整体架构 Context
 
-> 文档版本：v1.0
-> 更新时间：2026-10-13
+> 文档版本：v1.1
+> 更新时间：2026-11-16
 > 来源：代码仓结构分析
 
 ## 定位
@@ -20,8 +20,11 @@
 | SAF 服务（SA 66532） | `services/secure_access_fence/core_service/` |
 | Asset 框架层 | `frameworks/asset/` |
 | SAF 框架层 | `frameworks/secure_access_fence/` |
-| 公共 NAPI 工具 | `frameworks/common/napi/` |
-| 隐私计算 NAPI | `frameworks/hpic/js/napi/` |
+| 公共 NAPI 工具（现仅 SAF 使用） | `frameworks/common/napi/` |
+| 隐私计算 NAPI | `frameworks/privacy_computation/js/napi/` |
+| 隐私计算 IPC 客户端 | `frameworks/privacy_computation/ipc/` |
+| 隐私计算协议库 | `privacy_protocol/`（仓库顶层） |
+| 隐私计算服务侧 | `services/asset/privacy/` |
 
 ### API 入口
 
@@ -46,6 +49,9 @@
 | SAF Agent Fence 测试 | `test/secure_access_fence/agent_fence/` |
 | SAF NDK 测试 | `test/secure_access_fence/unittest/kits_ndk/` |
 | SAF UT 测试 | `test/secure_access_fence/unittest/ut_test/` |
+| 隐私计算 NAPI 覆盖测试 | `test/asset/unittest/privacy_coverage/` |
+| 隐私计算协议/HE/IPC 测试 | `test/asset/unittest/privacy_protocol/`、`privacy_he/`、`privacy_ipc/` |
+| 隐私计算 root 场景测试 | `test/asset/unittest/privacy_root/` |
 
 ## 两个子系统
 
@@ -71,6 +77,7 @@
 | `asset_ce_upgrade_list` | CE 升级列表 |
 | `asset_build_mode` | 构建模式（full / stub） |
 | `asset_enable_privacy_computation_config` | 隐私计算使能 |
+| `asset_privacy_computation_supported` | 隐私计算能力开关（关闭后接口返回 24000017） |
 
 ## 外部依赖
 
@@ -107,6 +114,7 @@
 
 - [Asset 服务架构](../asset/architecture/service.md)
 - [安全访问围栏架构](../secure_access_fence/architecture/service.md)
+- [隐私计算架构](../privacy_computation/architecture/overview.md)
 - [公共 NDK API](../asset/api/ndk-api.md)
 - [Core Service 模块](../asset/services/core-service.md)
 - [Crypto Manager 模块](../asset/services/crypto-manager.md)

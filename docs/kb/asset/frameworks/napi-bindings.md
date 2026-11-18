@@ -1,8 +1,8 @@
 # Asset NAPI 绑定模块 Context
 
-> 文档版本：v1.0
-> 更新时间：2026-10-13
-> 来源：`frameworks/asset/js/napi/`、`frameworks/common/napi/`
+> 文档版本：v1.1
+> 更新时间：2026-11-16
+> 来源：`frameworks/asset/js/napi/`
 
 ## 定位
 
@@ -29,14 +29,9 @@ Asset NAPI 绑定层将 Rust/C++ 后端的 Asset 能力暴露为 JavaScript API�
 
 头文件目录：`frameworks/asset/js/napi/inc/`（含上述各模块的 .h 文件 + `asset_napi_error_code.h`）
 
-### 公共 NAPI（共享依赖）
+### 公共 NAPI 工具
 
-| 文件 | 说明 |
-|------|------|
-| `frameworks/common/napi/src/napi_common.cpp` | 共享 NAPI 工具函数 |
-| `frameworks/common/napi/inc/napi_common.h` | 公共头文件 |
-
-公共 NAPI 工具（`napi_common.cpp/h`）由 Asset/SAF/HPIC NAPI 模块共享，提供通用的 JS 值转换和异步工作封装。
+Asset NAPI 使用模块自带的公共设施（`asset_napi_common.cpp`、`asset_napi_context.cpp`）。`frameworks/common/napi/`（`napi_common.cpp/h`）现仅由 SAF NAPI 模块使用，隐私计算模块另维护 `privacy_computation_napi_common.cpp`。
 
 ### 符号导出
 

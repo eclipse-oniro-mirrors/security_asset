@@ -1,7 +1,7 @@
 # SAF NAPI 绑定模块 Context
 
-> 文档版本：v1.0
-> 更新时间：2026-10-13
+> 文档版本：v1.1
+> 更新时间：2026-11-16
 > 来源：`frameworks/secure_access_fence/js/napi/`、`frameworks/common/napi/`
 
 ## 定位
@@ -26,7 +26,7 @@ SAF NAPI 绑定层将 C++ 后端的 SAF Agent Fence 能力暴露为 JavaScript A
 | `frameworks/common/napi/src/napi_common.cpp` | 共享 NAPI 工具函数 |
 | `frameworks/common/napi/inc/napi_common.h` | 公共头文件 |
 
-公共 NAPI 工具（`napi_common.cpp/h`）由 Asset/SAF/HPIC NAPI 模块共享，提供通用的 JS 值转换和异步工作封装。
+公共 NAPI 工具（`napi_common.cpp/h`）现仅由 SAF NAPI 模块使用；Asset 与隐私计算模块各自维护 `asset_napi_common.cpp` / `privacy_computation_napi_common.cpp`。
 
 ### 符号导出
 
