@@ -299,7 +299,7 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::TaskIden
             taskIdentityInfo.allowableDuration = DEFAULT_ALLOWABLE_DURATION;
         } else if (taskIdentityInfo.allowableDuration < 0 ||
                    taskIdentityInfo.allowableDuration > MAX_ALLOWABLE_DURATION) {
-            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "allowableDuration must be in (0, 60]");
+            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "allowableDuration must be in (0, 86400000] ms");
         }
     }
     if (napi_get_named_property(env, object, TaskIdentityKeys::AUTH_TOKEN, &propValue) == napi_ok) {
@@ -325,10 +325,10 @@ napi_status ValidateTaskIdentityInfo(const napi_env env, const SAF::TaskIdentity
     return napi_ok;
 }
 
-/// Parses a JS value as a byte array (Uint8Array or ArrayBuffer) into vector<int32_t>.
-/// Each byte (0~255) is stored as one int32_t element, matching the IDL List<int> type
-/// used for authToken transport. Values are always 0~255 (u8 range), validated in
-/// ValidateTaskIdentityInfo and Rust validator.
+/// Parses a JS value as a byte array (Uint8Array or ArrayBuffer) or a JS number array
+/// into vector<int32_t>. Each byte (0~255) is stored as one int32_t element, matching
+/// the IDL List<int> type used for authToken / challenge transport. Values are always
+/// 0~255 (u8 range), validated in ValidateTaskIdentityInfo and Rust validator.
 napi_status NapiGetProperty(const napi_env env, napi_value object, std::vector<int32_t> &values)
 {
     NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);

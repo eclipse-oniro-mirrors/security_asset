@@ -23,6 +23,7 @@
 #include "napi/native_node_api.h"
 #include "secure_access_fence_type.h"
 #include "saf_result_code.h"
+#include "saf_secure_clear.h"
 #include "event_handler.h"
 #include "want.h"
 
@@ -112,6 +113,13 @@ public:
 
 class GenerateTaskIdentityContext : public AgentFenceAsyncContext {
 public:
+    ~GenerateTaskIdentityContext() override
+    {
+        // Wipe the input authToken and the output taskAttributes (which embeds
+        // the base64 authToken) once the JS copies have been made in resolve.
+        SecureClear(taskIdentityInfo.authToken);
+        SecureClear(taskIdentity.taskAttributes);
+    }
     TaskIdentityInfo taskIdentityInfo {};
     TaskIdentity taskIdentity {};
 };

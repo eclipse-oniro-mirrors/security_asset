@@ -60,6 +60,7 @@ const JSON_KEY_MESSAGE: &str = "message";
 const JSON_KEY_CHALLENGE: &str = "challenge";
 const JSON_KEY_TICKET: &str = "ticket";
 const JSON_KEY_CALLER_TOKEN_ID: &str = "callerTokenId";
+const JSON_KEY_CALLER_UID: &str = "callerUid";
 const JSON_KEY_CLI_INFOS: &str = "cliInfos";
 const JSON_KEY_CLI_CMD_NAME: &str = "cliCmdName";
 const JSON_KEY_SUB_CLI_CMD_NAME: &str = "subCliCmdName";
@@ -514,11 +515,16 @@ impl SAFService {
         )
     }
 
-    fn generate_task_challenge(&self, os_account_id: i32, mut info: TaskIdentityInfo) -> Result<Vec<u8>> {
+    fn generate_task_challenge(
+        &self,
+        os_account_id: i32,
+        caller: u32,
+        mut info: TaskIdentityInfo,
+    ) -> Result<Vec<u8>> {
         if let Err(code) = check_query_tool_permission(os_account_id, "generate_task_challenge") {
             return macros_lib::log_throw_error!(code, "Permission denied");
         }
-        let caller = crate::wrapper::get_calling_token_id();
+        // caller (uid) is resolved once by the stub and passed down.
         execute_with_metrics_single!(
             "generate_task_challenge",
             task_identity::generate_task_challenge,
@@ -528,11 +534,16 @@ impl SAFService {
         )
     }
 
-    fn generate_task_identity(&self, os_account_id: i32, mut info: TaskIdentityInfo) -> Result<TaskIdentity> {
+    fn generate_task_identity(
+        &self,
+        os_account_id: i32,
+        caller: u32,
+        mut info: TaskIdentityInfo,
+    ) -> Result<TaskIdentity> {
         if let Err(code) = check_query_tool_permission(os_account_id, "generate_task_identity") {
             return macros_lib::log_throw_error!(code, "Permission denied");
         }
-        let caller = crate::wrapper::get_calling_token_id();
+        // caller (uid) is resolved once by the stub and passed down.
         execute_with_metrics_single!(
             "generate_task_identity",
             task_identity::generate_task_identity,
@@ -542,11 +553,11 @@ impl SAFService {
         )
     }
 
-    fn revoke_task_identity(&self, os_account_id: i32, task_ids: Vec<String>) -> Result<()> {
+    fn revoke_task_identity(&self, os_account_id: i32, caller: u32, task_ids: Vec<String>) -> Result<()> {
         if let Err(code) = check_query_tool_permission(os_account_id, "revoke_task_identity") {
             return macros_lib::log_throw_error!(code, "Permission denied");
         }
-        let caller = crate::wrapper::get_calling_token_id();
+        // caller (uid) is resolved once by the stub and passed down.
         execute_with_metrics_single!(
             "revoke_task_identity",
             task_identity::revoke_task_identities,
@@ -559,18 +570,18 @@ impl SAFService {
     fn retrieve_auth_token_by_task_id(
         &self,
         os_account_id: i32,
-        caller_token: i32,
+        uid: u32,
         task_id: String,
     ) -> Result<Vec<u8>> {
         if let Err(code) = check_retrieve_auth_token_permission(os_account_id) {
             return macros_lib::log_throw_error!(code, "Permission denied");
         }
-        let caller = caller_token as u32;
+        // uid is the generating application's uid, passed directly as the store key.
         execute_with_metrics_single!(
             "retrieve_auth_token_by_task_id",
             task_identity::retrieve_auth_token_by_task_id,
             os_account_id,
-            caller,
+            uid,
             &task_id
         )
     }

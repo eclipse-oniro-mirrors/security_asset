@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "saf_log.h"
+#include "saf_secure_clear.h"
 
 #ifdef SAF_SUPPORT_USER_AUTH_FRAMEWORK
 #include "user_access_ctrl_client.h"
@@ -46,6 +47,11 @@ struct IamVerifyAsyncResult {
     int32_t resultCode {IAM_VERIFY_RESULT_NOT_SET};
     std::vector<uint8_t> challenge;
     uint32_t authTrustLevel {0};
+};
+
+struct IamRedeemAsyncResult {
+    int32_t resultCode {IAM_VERIFY_RESULT_NOT_SET};
+    std::vector<uint8_t> token;
 };
 
 class VerifyTokenCallbackWrapper final : public VerifyTokenCallback {
@@ -75,6 +81,32 @@ private:
     std::weak_ptr<std::promise<IamVerifyAsyncResult>> weakPromise_;
 };
 
+class RedeemTokenCallbackWrapper final : public VerifyTokenCallback {
+public:
+    explicit RedeemTokenCallbackWrapper(std::weak_ptr<std::promise<IamRedeemAsyncResult>> weakPromise)
+        : weakPromise_(weakPromise) {}
+
+    virtual ~RedeemTokenCallbackWrapper() = default;
+
+    void OnResult(int32_t result, const Attributes &extraInfo) override
+    {
+        std::call_once(flag_, [this, result, &extraInfo]() {
+            IamRedeemAsyncResult redeemResult;
+            redeemResult.resultCode = result;
+            if (result == SUCCESS) {
+                extraInfo.GetUint8ArrayValue(Attributes::ATTR_SIGNATURE, redeemResult.token);
+            }
+            if (auto sharedPromise = weakPromise_.lock()) {
+                sharedPromise->set_value(redeemResult);
+            }
+        });
+    }
+
+private:
+    std::once_flag flag_{};
+    std::weak_ptr<std::promise<IamRedeemAsyncResult>> weakPromise_;
+};
+
 IamVerifyResult VerifyAuthToken(const rust::Vec<uint8_t> &authToken, uint64_t allowableDurationMs)
 {
     IamVerifyResult ret = {};
@@ -88,6 +120,8 @@ IamVerifyResult VerifyAuthToken(const rust::Vec<uint8_t> &authToken, uint64_t al
     auto future = sharedPromise->get_future();
     auto callback = std::make_shared<VerifyTokenCallbackWrapper>(sharedPromise);
     UserAccessCtrlClient::GetInstance().VerifyAuthToken(token, allowableDurationMs, callback);
+    // The client call has serialized the token into the IPC parcel; wipe our copy.
+    SecureClear(token);
 
     if (future.wait_for(std::chrono::milliseconds(IAM_VERIFY_TIMEOUT_MS)) == std::future_status::timeout) {
         LOGE("VerifyAuthToken timeout");
@@ -104,6 +138,39 @@ IamVerifyResult VerifyAuthToken(const rust::Vec<uint8_t> &authToken, uint64_t al
     return ret;
 }
 
+IamRedeemResult RedeemScheduledAuthToken(
+    const rust::Vec<uint8_t> &challenge, const rust::Vec<uint8_t> &scheduleToken)
+{
+    IamRedeemResult ret = {};
+    if (challenge.empty() || scheduleToken.empty()) {
+        ret.result_code = IAM_VERIFY_RESULT_NOT_SET;
+        return ret;
+    }
+
+    std::vector<uint8_t> challengeVec(challenge.begin(), challenge.end());
+    std::vector<uint8_t> scheduleTokenVec(scheduleToken.begin(), scheduleToken.end());
+    auto sharedPromise = std::make_shared<std::promise<IamRedeemAsyncResult>>();
+    auto future = sharedPromise->get_future();
+    auto callback = std::make_shared<RedeemTokenCallbackWrapper>(sharedPromise);
+    UserAccessCtrlClient::GetInstance().RedeemScheduledAuthToken(challengeVec, scheduleTokenVec, callback);
+    // The client call has serialized the inputs into the IPC parcel; wipe our copies.
+    SecureClear(challengeVec);
+    SecureClear(scheduleTokenVec);
+
+    if (future.wait_for(std::chrono::milliseconds(IAM_VERIFY_TIMEOUT_MS)) == std::future_status::timeout) {
+        LOGE("RedeemScheduledAuthToken timeout");
+        ret.result_code = IAM_VERIFY_RESULT_TIMEOUT;
+        return ret;
+    }
+
+    IamRedeemAsyncResult redeemResult = future.get();
+    ret.result_code = redeemResult.resultCode;
+    for (auto b : redeemResult.token) {
+        ret.token.push_back(b);
+    }
+    return ret;
+}
+
 #else // !SAF_SUPPORT_USER_AUTH_FRAMEWORK
 
 constexpr int32_t IAM_VERIFY_RESULT_NOT_SUPPORTED = -3;
@@ -117,8 +184,17 @@ IamVerifyResult VerifyAuthToken(const rust::Vec<uint8_t> &authToken, uint64_t al
     return ret;
 }
 
-#endif // SAF_SUPPORT_USER_AUTH_FRAMEWORK
+IamRedeemResult RedeemScheduledAuthToken(
+    const rust::Vec<uint8_t> &challenge, const rust::Vec<uint8_t> &scheduleToken)
+{
+    (void)challenge;
+    (void)scheduleToken;
+    IamRedeemResult ret = {};
+    ret.result_code = IAM_VERIFY_RESULT_NOT_SUPPORTED;
+    return ret;
+}
 
+#endif // SAF_SUPPORT_USER_AUTH_FRAMEWORK
 } // namespace SAF
 } // namespace Security
 } // namespace OHOS

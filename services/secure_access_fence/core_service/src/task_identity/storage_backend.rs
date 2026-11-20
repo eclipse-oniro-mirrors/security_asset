@@ -93,6 +93,7 @@ fn delete_file_with_lock(file_path: &std::path::Path) {
 }
 
 // ======================== Path helpers ========================
+// `caller` parameter is the application's uid (not token id).
 
 fn get_task_dir(os_account_id: i32, caller: u32) -> String {
     format!("{}/{}/{}/{}", TASK_BASE_DIR_PREFIX, os_account_id, TASK_DIR_SUFFIX, caller)

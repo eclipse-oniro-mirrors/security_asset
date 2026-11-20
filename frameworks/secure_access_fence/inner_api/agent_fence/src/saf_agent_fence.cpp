@@ -18,6 +18,7 @@
 #include <functional>
 
 #include "saf_result_code.h"
+#include "saf_secure_clear.h"
 #include "isecure_access_fence.h"
 #include "saf_agent_params_checker.h"
 
@@ -399,20 +400,31 @@ int32_t SafAgentFence::RevokeTaskIdentity(const std::vector<std::string> &taskId
 }
 
 int32_t SafAgentFence::RetrieveAuthTokenByTaskId(
-    int32_t callerToken,
+    uint32_t uid,
     const std::string &taskId,
-    std::vector<int32_t> &authToken)
+    std::vector<uint8_t> &authToken)
 {
     LOGI("SafAgentFence::RetrieveAuthTokenByTaskId enter");
 
     auto proxy = GetProxy(g_mutex);
     IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
 
+    // Internal IPC payload keeps the IDL List<int> type (one int32 per byte);
+    // converted to uint8_t at this API boundary.
+    std::vector<int32_t> authTokenList;
     int32_t resultCode = SAF_SUCCESS;
     int32_t ret = HandleIpcError(proxy, [&]() {
-        return proxy->RetrieveAuthTokenByTaskId(callerToken, taskId, authToken, resultCode);
+        return proxy->RetrieveAuthTokenByTaskId(uid, taskId, authTokenList, resultCode);
     });
     IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    authToken.clear();
+    authToken.reserve(authTokenList.size());
+    for (int32_t value : authTokenList) {
+        authToken.push_back(static_cast<uint8_t>(value));
+    }
+    // The internal i32 copy holds the same secret; wipe it before returning.
+    SecureClear(authTokenList);
 
     LOGI("SafAgentFence::RetrieveAuthTokenByTaskId finished, resultCode = 0x%{public}x", resultCode);
     return resultCode;

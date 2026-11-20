@@ -199,7 +199,7 @@ public:
      * @brief Generate a random challenge for task-level authorization.
      *
      * @param taskIdentityInfo Task identity info.
-     * @param challenge Output challenge bytes (as i32 list over IPC).
+     * @param challenge Output challenge bytes (each byte as an int32 element).
      * @return Returns 0 on success, or error code on failure.
      */
     static int32_t GenerateTaskChallenge(
@@ -228,15 +228,17 @@ public:
     /**
      * @brief Retrieve auth token by task id.
      *
-     * @param callerToken Caller token id.
+     * @param uid Task owner's application uid (uint32_t).
      * @param taskId Task id to retrieve auth token for.
-     * @param authToken Output auth token bytes (empty for low-risk tasks).
+     * @param authToken Output auth token bytes (empty for low-risk tasks). Internal
+     *                   IPC payload stays List<int> (i32 per byte); converted to
+     *                   uint8_t at this boundary.
      * @return Returns 0 on success, or error code on failure.
      */
     static int32_t RetrieveAuthTokenByTaskId(
-        int32_t callerToken,
+        uint32_t uid,
         const std::string &taskId,
-        std::vector<int32_t> &authToken);
+        std::vector<uint8_t> &authToken);
 
     /**
      * @brief Query the control status of simulated click operation.

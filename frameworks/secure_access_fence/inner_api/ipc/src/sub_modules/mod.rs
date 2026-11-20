@@ -31,5 +31,5 @@ pub use task_identity::{
     deserialize_task_identity_info,
     deserialize_i32_u8_list,
     serialize_task_identity,
-    serialize_u8_to_i32_list,
+    serialize_u8_list,
 };

@@ -17,8 +17,8 @@
 #define IAM_VERIFY_WRAPPER_H
 
 // This header is included by the CXX bridge (wrapper.rs.h) after rust/cxx.h.
-// It declares VerifyAuthToken so the CXX bridge can find it.
-// IamVerifyResult and rust::Vec are defined by the CXX bridge runtime.
+// It declares the IAM auth token wrappers so the CXX bridge can find them.
+// IamVerifyResult, IamRedeemResult and rust::Vec are defined by the CXX bridge runtime.
 
 #include <cstdint>
 
@@ -27,8 +27,11 @@ namespace Security {
 namespace SAF {
 
 struct IamVerifyResult;
+struct IamRedeemResult;
 
 IamVerifyResult VerifyAuthToken(const rust::Vec<uint8_t> &authToken, uint64_t allowableDurationMs);
+IamRedeemResult RedeemScheduledAuthToken(
+    const rust::Vec<uint8_t> &challenge, const rust::Vec<uint8_t> &scheduleToken);
 
 } // namespace SAF
 } // namespace Security

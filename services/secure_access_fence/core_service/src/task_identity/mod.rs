@@ -28,7 +28,7 @@ use saf_definition::{macros_lib, ErrCode, ExecuteType, Result, TaskIdentity, Tas
 use saf_log::{loge, logi, logw};
 use saf_utils::{JsonValue, get_compact_json_value, to_hex};
 
-use crate::JSON_KEY_CALLER_TOKEN_ID;
+use crate::JSON_KEY_CALLER_UID;
 use crate::ticket_operation::{
     base64_decode, base64_encode, compute_hmac_sha256, constant_time_eq, create_ticket_key_manager,
     generate_random_bytes, verify_hmac_sha256,
@@ -57,23 +57,40 @@ fn initial_challenge_file_stem(challenge: &[u8]) -> Result<String> {
 /// Verifies auth token via IAM. Returns (challenge, authTrustLevel).
 /// challenge is compared with pending challenge from generateTaskChallenge.
 /// authTrustLevel is written into taskAttributes.
-fn iam_verify_auth_token(auth_token: &[u8], allowable_duration: i32) -> Result<(Vec<u8>, u32)> {
-    if allowable_duration < 0 {
+/// allowableDuration is in milliseconds, per IAM's constraint (0, 86400000].
+fn iam_verify_auth_token(auth_token: &[u8], allowable_duration_ms: i32) -> Result<(Vec<u8>, u32)> {
+    if allowable_duration_ms <= 0 {
         return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
-            "allowableDuration must be non-negative: {}", allowable_duration);
+            "allowableDuration must be positive: {}", allowable_duration_ms);
     }
-    let allowable_ms = match (allowable_duration as u64).checked_mul(MS_PER_SEC) {
-        Some(v) => v,
-        None => return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
-            "allowableDuration overflow: {} * {}", allowable_duration, MS_PER_SEC),
-    };
     let token_vec: Vec<u8> = auth_token.to_vec();
-    let result = crate::wrapper::ffi::VerifyAuthToken(&token_vec, allowable_ms);
+    let result = crate::wrapper::ffi::VerifyAuthToken(&token_vec, allowable_duration_ms as u64);
     if result.result_code != 0 {
         return macros_lib::log_throw_error!(ErrCode::GeneralError,
             "IAM VerifyAuthToken failed, result_code={}", result.result_code);
     }
     Ok((result.challenge, result.auth_trust_level))
+}
+
+/// Redeems a scheduled auth token into a short-lived real-time auth token via IAM.
+/// A fresh random challenge is generated internally and bound to the redeemed token.
+/// Returns (redeem_challenge, real_time_token): the caller compares the redeem-time
+/// random challenge with the challenge returned by VerifyAuthToken.
+fn redeem_scheduled_auth_token(schedule_token: &[u8]) -> Result<(Vec<u8>, Vec<u8>)> {
+    let mut challenge = vec![0u8; CHALLENGE_SIZE as usize];
+    generate_random_bytes(&mut challenge, CHALLENGE_SIZE)?;
+
+    let schedule_token_vec: Vec<u8> = schedule_token.to_vec();
+    let result = crate::wrapper::ffi::RedeemScheduledAuthToken(&challenge, &schedule_token_vec);
+    if result.result_code != 0 {
+        return macros_lib::log_throw_error!(ErrCode::GeneralError,
+            "IAM RedeemScheduledAuthToken failed, result_code={}", result.result_code);
+    }
+    if result.token.is_empty() {
+        return macros_lib::log_throw_error!(ErrCode::GeneralError,
+            "IAM RedeemScheduledAuthToken returned empty token");
+    }
+    Ok((challenge, result.token))
 }
 
 /// Computes absolute expiration time (epoch seconds).
@@ -98,11 +115,12 @@ fn compute_task_expire_sec(task_expire_time: i32) -> Result<i64> {
 }
 
 /// Builds the task attributes JSON that is embedded into the task identity and covered by HMAC.
+/// `caller` is the generating application's uid.
 fn build_task_attributes(info: &TaskIdentityInfo, caller: u32, atl: u32) -> Result<String> {
     let task_expire_sec = compute_task_expire_sec(info.task_expire_time)?;
     let mut builder = JsonBuilder::new();
     builder.add_string(K::TASK_ID, &info.task_id);
-    builder.add_string(JSON_KEY_CALLER_TOKEN_ID, &caller.to_string());
+    builder.add_string(JSON_KEY_CALLER_UID, &caller.to_string());
     builder.add_number(K::TASK_EXPIRE_TIME, info.task_expire_time as i64);
     builder.add_number(K::TASK_EXPIRE_SEC, task_expire_sec);
     builder.add_number(K::EXECUTE_TYPE, info.execute_type as i64);
@@ -139,43 +157,54 @@ pub fn generate_task_challenge(
     Ok(challenge)
 }
 
-/// Verifies IAM authToken, compares with pending challenge, returns ATL.
-/// Consumes pending and compares; pending is discarded after comparison.
+/// Verifies IAM authToken and returns ATL.
+/// DELAYED tasks: verify the scheduled token.
+/// INSTANT tasks: verify the authToken directly.
+/// Both path compare the IAM-returned challenge with the pending challenge stored by generateTaskChallenge
+/// (consumed on read), falling back to the reusable initial-wakeup challenge.
 fn verify_iam_and_get_challenge(
     os_account_id: i32,
     caller: u32,
     info: &TaskIdentityInfo,
 ) -> Result<u32> {
     let (iam_challenge, atl) = iam_verify_auth_token(&info.auth_token, info.allowable_duration)?;
+    verify_against_stored_challenge(os_account_id, caller, &info.task_id, &iam_challenge)?;
+    Ok(atl)
+}
 
+/// Compares the IAM-returned challenge with the pending challenge stored by
+/// generateTaskChallenge (consumed on read). Falls back to the reusable
+/// initial-wakeup challenge when no task-bound challenge exists (INSTANT only).
+fn verify_against_stored_challenge(
+    os_account_id: i32,
+    caller: u32,
+    task_id: &str,
+    iam_challenge: &[u8],
+) -> Result<()> {
     let store = global_task_identity_store();
-    match store.get_challenge(os_account_id, caller, &info.task_id) {
+    match store.get_challenge(os_account_id, caller, task_id) {
         Ok(pending_challenge_b64) => {
             // Task-bound challenge takes precedence and is consumed.
             let pending_challenge = base64_decode(pending_challenge_b64.as_bytes())?;
-            if !constant_time_eq(&iam_challenge, &pending_challenge)? {
+            if !constant_time_eq(iam_challenge, &pending_challenge)? {
                 return macros_lib::log_throw_error!(ErrCode::TaskIdentityMismatch,
                     "IAM challenge does not match pending challenge");
             }
+            Ok(())
         },
         Err(e) if e.code == ErrCode::TaskIdentityNotFound => {
             // No task-bound challenge: fall back to a reusable initial-wakeup challenge.
-            if info.execute_type != ExecuteType::Instant {
-                return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
-                    "initial wakeup challenge can only be used for INSTANT tasks");
-            }
-            let iam_challenge_b64 = encoded_to_string(base64_encode(&iam_challenge)?)?;
-            let file_stem = initial_challenge_file_stem(&iam_challenge)?;
-            store.check_initial_challenge(os_account_id, caller, &file_stem, &iam_challenge_b64)?;
+            let iam_challenge_b64 = encoded_to_string(base64_encode(iam_challenge)?)?;
+            let file_stem = initial_challenge_file_stem(iam_challenge)?;
+            store.check_initial_challenge(os_account_id, caller, &file_stem, &iam_challenge_b64)
         },
-        Err(e) => return Err(e),
+        Err(e) => Err(e),
     }
-    Ok(atl)
 }
 
 /// Generates challenge1 + challenge2, derives session key, computes HMAC,
 /// and returns (identity_b64, challenge_b64).
-/// HMAC data = taskAttributes (containing callerTokenId) + taskId + challenge2,
+/// HMAC data = taskAttributes (containing callerUid) + taskId + challenge2,
 /// mirroring the RequestToolPermissions ticket pattern: no dynamic caller identity
 /// is spliced in, so verification succeeds regardless of the verifying caller.
 fn compute_identity_and_challenge(
@@ -209,7 +238,7 @@ fn compute_identity_and_challenge(
 ///
 /// - challenge1 and challenge2: both freshly generated random 32 bytes
 /// - challenge1: derives session_key; challenge2: appended to HMAC data
-/// - HMAC data = taskAttributes (embeds callerTokenId) + taskId + challenge2
+/// - HMAC data = taskAttributes (embeds callerUid) + taskId + challenge2
 /// - Returns challenge = base64(challenge1 + challenge2), identity = base64(hmac)
 pub fn generate_task_identity(
     os_account_id: i32,
@@ -271,7 +300,7 @@ pub fn revoke_task_identities(os_account_id: i32, caller: u32, task_ids: Vec<Str
 
 /// Verifies HMAC of a task record (same as batch_verify_ticket).
 /// Splits combined challenge → challenge1 (derive key) + challenge2 (HMAC data).
-/// HMAC data uses the stored task_attributes (which embed the callerTokenId),
+/// HMAC data uses the stored task_attributes (which embed the callerUid),
 /// so no dynamic caller identity is required at verification time.
 pub(crate) fn verify_record_hmac(
     os_account_id: i32,
@@ -326,7 +355,7 @@ pub(crate) fn fetch_record_and_verify(
     task_id: &str,
 ) -> Result<TaskIdentityRecord> {
     if caller == 0 {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "callerToken is invalid");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "caller is invalid");
     }
     if is_from_initial_wake_up(task_id) {
         return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
@@ -378,11 +407,30 @@ pub fn verify_task_identity(
     challenge: &str,
 ) -> Result<()> {
     if caller == 0 {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "callerToken is invalid");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "caller is invalid");
     }
     let task_id = parse_task_id(task_attributes)?;
     let record = fetch_record_and_verify(os_account_id, caller, &task_id)?;
-    check_task_identity_match(&record, identity, challenge)
+    check_task_identity_match(&record, identity, challenge)?;
+    verify_task_auth_token(&record)
+}
+
+/// Verifies the authToken stored in the task record.
+/// INSTANT tasks: verifies the stored normal authToken directly.
+/// DELAYED tasks: redeems the stored scheduled authToken first,
+/// then verifies the redeemed real-time authToken.
+fn verify_task_auth_token(record: &TaskIdentityRecord) -> Result<()> {
+    let stored_token = extract_auth_token(&record.task_attributes)?;
+    if stored_token.is_empty() {
+        return Ok(());
+    }
+    if record.execute_type == ExecuteType::Delayed {
+        let (_, real_time_token) = redeem_scheduled_auth_token(&stored_token)?;
+        iam_verify_auth_token(&real_time_token, record.allowable_duration)?;
+    } else {
+        iam_verify_auth_token(&stored_token, record.allowable_duration)?;
+    }
+    Ok(())
 }
 
 /// Extracts authToken from taskAttributes JSON (base64 decode → raw bytes).
@@ -401,16 +449,43 @@ fn extract_auth_token(task_attributes: &str) -> Result<Vec<u8>> {
     }
 }
 
-/// Retrieves authToken by callerToken + taskId via the shared verification spine.
-/// Note: INSTANT task consumption (delete after verify) is handled by the ticket
-/// verification flow (verify_ticket_impl), not by this function.
+/// Retrieves authToken by uid + taskId via the shared verification spine.
+/// INSTANT tasks: returns the stored normal authToken directly.
+/// DELAYED tasks: the stored token is a scheduled auth token, redeemed into
+/// a short-lived real-time auth token via IAM before being returned.
 pub fn retrieve_auth_token_by_task_id(
     os_account_id: i32,
     caller: u32,
     task_id: &str,
 ) -> Result<Vec<u8>> {
     let record = fetch_record_and_verify(os_account_id, caller, task_id)?;
-    extract_auth_token(&record.task_attributes)
+    let stored_token = extract_auth_token(&record.task_attributes)?;
+    if stored_token.is_empty() {
+        return Ok(Vec::new());
+    }
+    if record.execute_type == ExecuteType::Delayed {
+        redeem_scheduled_auth_token(&stored_token).map(|(_, real_time_token)| real_time_token)
+    } else {
+        Ok(stored_token)
+    }
+}
+
+/// Extracts the callerUid embedded in the taskAttributes JSON (written by the
+/// generate side from the same binder uid used as the store key), so verify
+/// lookups stay consistent with generation without requiring a top-level
+/// callerUid field in the ticket message.
+pub(crate) fn parse_caller_uid(task_attributes: &str) -> Result<u32> {
+    let json = JsonValue::from_text(task_attributes).map_err(|e| {
+        macros_lib::log_and_into_saf_error!(ErrCode::InvalidArgument,
+            "parse taskAttributes for callerUid failed: {}", e)
+    })?;
+    let caller_str = get_compact_json_value(&json, JSON_KEY_CALLER_UID).map_err(|e| {
+        macros_lib::log_and_into_saf_error!(ErrCode::InvalidArgument,
+            "callerUid not found in taskAttributes: {}", e)
+    })?;
+    caller_str.trim_matches('"').parse::<u32>().map_err(|_| {
+        macros_lib::log_and_into_saf_error!(ErrCode::InvalidArgument, "callerUid is not a valid u32")
+    })
 }
 
 /// Verifies the task identity embedded in a ticket message (if present).
@@ -426,12 +501,11 @@ pub(crate) fn verify_task_identity_and_consume(
     let task_attributes = get_compact_json_value(task_identity_obj, K::TASK_ATTRIBUTES)?;
     let identity = get_compact_json_value(task_identity_obj, K::IDENTITY)?;
     let challenge = get_compact_json_value(task_identity_obj, K::CHALLENGE).unwrap_or_default();
-    let caller_str = get_compact_json_value(message_json, JSON_KEY_CALLER_TOKEN_ID)?;
-    let caller: u32 = caller_str.parse().map_err(|_| {
-        macros_lib::log_and_into_saf_error!(ErrCode::InvalidArgument, "callerToken is not a valid u32")
-    })?;
+    // callerUid lives inside the taskAttributes JSON (written by the generate
+    // side from the same binder uid used as the store key).
+    let caller = parse_caller_uid(&task_attributes)?;
     if caller == 0 {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "callerToken is invalid");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "callerUid is invalid");
     }
 
     let task_id = parse_task_id(&task_attributes)?;

@@ -34,7 +34,7 @@ phase_approvals:
     approver: "Lin Shen"
     approved_at: "2026-10-24"
 created_at: 2026-10-24
-updated_at: 2026-10-24
+updated_at: 2026-11-19
 related: []
 related_tasks: []
 related_decisions: []
@@ -46,4 +46,7 @@ code_refs:
 commits:
   - "cd731e5b0d94c262a6f1f1d7a4b28ae451052f38"
   - "fc582502b877fc00a5cf4968056173fa916d8bfa"
+  - "0043bc2c" # feat: support scheduled auth token in task identity（DELAYED 先 Redeem 兑换）
+  - "a8013545" # modify RetrieveAuthTokenByTaskId params type（后经 a9d045da 及工作区收口回退为 callerToken/uint32 + List<int>）
+  - "a9d045da" # uid（caller 参数统一 uid；工作区已回退为 callerToken，uid 由服务侧 GetHapTokenInfo 解析）
 ---

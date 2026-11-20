@@ -62,7 +62,9 @@ pub fn serialize_task_identity(identity: &TaskIdentity, parcel: &mut MsgParcel) 
 const U8_MAX: i32 = 255;
 
 /// Deserialize an i32 list carrying raw bytes (authToken / challenge) from MsgParcel.
-/// Each value must be in u8 range (0~255); values outside this range are rejected.
+/// Matches the IDL codegen wire format for `List<int>`:
+/// [i32 count][count x 4-byte int32 elements], each value in u8 range (0~255).
+/// Values outside this range are rejected.
 pub fn deserialize_i32_u8_list(parcel: &mut MsgParcel) -> Result<Vec<u8>> {
     let count = parcel.read::<i32>().map_err(ipc_err_handle)?;
     if count < 0 || count as u32 > crate::MAX_VEC_CAPACITY {
@@ -88,7 +90,11 @@ pub fn deserialize_i32_u8_list(parcel: &mut MsgParcel) -> Result<Vec<u8>> {
 }
 
 /// Serialize raw bytes as an i32 list to MsgParcel (for reply).
-pub fn serialize_u8_to_i32_list(bytes: &[u8], parcel: &mut MsgParcel) -> Result<()> {
+/// Matches the IDL codegen wire format for `List<int>`:
+/// [i32 count][count x 4-byte int32 elements] (the IDL-generated proxy writes each
+/// element via WriteUint8/WriteInt32 which pads every scalar to 4 bytes; the packed
+/// WriteUInt8Vector format is NOT what the IDL-generated code emits).
+pub fn serialize_u8_list(bytes: &[u8], parcel: &mut MsgParcel) -> Result<()> {
     let count = i32::try_from(bytes.len()).map_err(|_| {
         macros_lib::log_and_into_saf_error!(ErrCode::InvalidArrayLen,
             "[FATAL][IPC]bytes length overflows i32")
