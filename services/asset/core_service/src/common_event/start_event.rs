@@ -17,7 +17,7 @@
 
 use std::{collections::HashMap, ptr::null};
 
-use asset_common::{AutoCounter, ConstAssetBlob, ConstAssetBlobArray, TaskManager, GROUP_SEPARATOR};
+use asset_common::{AutoCounter, ConstAssetBlob, ConstAssetBlobArray, TaskManager, GROUP_SEPARATOR, get_user_id};
 use asset_definition::{macros_lib, ErrCode, Result};
 use asset_file_operator::de_operator::delete_user_de_dir;
 use asset_log::{loge, logi, logw};
@@ -33,6 +33,8 @@ const APP_ID: &str = "appId";
 const BUNDLE_NAME: &str = "bundleName";
 const DEVELOPER_ID: &str = "developerId";
 const GROUP_IDS: &str = "assetAccessGroups";
+const KEEP_DATA: &str = "keepData";
+const UID: &str = "uid";
 const NET_CONN_STATE_CONNECTED: &str = "3";
 
 struct PackageRemovedWant<'a>(&'a HashMap<String, String>);
@@ -91,7 +93,11 @@ impl WantParser<PackageInfo> for PackageRemovedWant<'_> {
             _ => (None, None),
         };
 
-        Ok(PackageInfo { user_id, app_index, app_id, developer_id, group_ids, bundle_name })
+        // parse keepdata from want: assets are retained only when explicitly
+        // true (BMS publishes the "keepData" param).
+        let keepdata = self.0.get(KEEP_DATA).map(|v| v == "true").unwrap_or(false);
+
+        Ok(PackageInfo { user_id, app_index, app_id, developer_id, group_ids, bundle_name, keepdata })
     }
 }
 
@@ -122,8 +128,82 @@ fn handle_package_removed(want: &HashMap<String, String>) {
             developer_id,
             group_ids,
             bundle_name,
+            keepdata: package_info.keepdata,
         });
     };
+}
+
+struct UninstallDataClearedInfo {
+    user_id: i32,
+    bundle_name: String,
+    app_id: Option<String>,
+    app_index: Option<i32>,
+    developer_id: Option<String>,
+    group_ids: Option<Vec<String>>,
+}
+
+struct UninstallDataClearedWant<'a>(&'a HashMap<String, String>);
+impl WantParser<UninstallDataClearedInfo> for UninstallDataClearedWant<'_> {
+    fn parse(&self) -> Result<UninstallDataClearedInfo> {
+        // parse user id from want. The clear event carries uid instead of
+        // userId (BMS NotifyUninstalledBundleCleared), so derive it via the
+        // account service interface.
+        let user_id = match self.0.get(USER_ID) {
+            Some(user_id) => match user_id.parse::<i32>() {
+                Ok(user_id) => user_id,
+                _ => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::InvalidArgument, "[FATAL]Parse cleared userId fail!"),
+            },
+            None => match self.0.get(UID).and_then(|uid| uid.parse::<i32>().ok()) {
+                Some(uid) if uid > 0 => get_user_id(uid as u64)? as i32,
+                _ => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::InvalidArgument, "[FATAL]Get cleared userId and uid fail!"),
+            },
+        };
+
+        // parse bundle name from want
+        let Some(bundle_name) = self.0.get(BUNDLE_NAME) else {
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Get cleared bundleName fail!");
+        };
+
+        // parse groups from want
+        let (developer_id, group_ids) = match (self.0.get(DEVELOPER_ID), self.0.get(GROUP_IDS)) {
+            (Some(developer_id), Some(group_ids)) => {
+                let group_ids: Vec<String> =
+                    group_ids.split(GROUP_SEPARATOR).map(|group_id| group_id.to_string()).collect();
+                (Some(developer_id.to_string()), Some(group_ids))
+            },
+            _ => (None, None),
+        };
+
+        // parse the identity of the app that triggered the clear (BMS carries
+        // appId/appIndex): the cleanup is scoped to its own retention entry.
+        let app_id = self.0.get(APP_ID).map(|app_id| app_id.to_string());
+        let app_index = self.0.get(APP_INDEX).and_then(|app_index| app_index.parse::<i32>().ok());
+
+        Ok(UninstallDataClearedInfo {
+            user_id,
+            bundle_name: bundle_name.to_string(),
+            app_id,
+            app_index,
+            developer_id,
+            group_ids,
+        })
+    }
+}
+
+fn handle_uninstall_data_cleared(want: &HashMap<String, String>) {
+    if let Ok(info) = UninstallDataClearedWant(want).parse() {
+        listener::on_uninstall_data_cleared(
+            info.user_id,
+            info.bundle_name,
+            info.app_id,
+            info.app_index,
+            info.developer_id,
+            info.group_ids,
+        );
+    }
 }
 
 fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
@@ -135,6 +215,9 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
     if reason_name == "usual.event.PACKAGE_REMOVED" || reason_name == "usual.event.SANDBOX_PACKAGE_REMOVED" {
         let want = reason.extra_data.want();
         handle_package_removed(&want);
+    } else if reason_name == "usual.event.PACKAGE_UNINSTALLED_DATA_CLEARED" {
+        let want = reason.extra_data.want();
+        handle_uninstall_data_cleared(&want);
     } else if reason_name == "usual.event.USER_REMOVED" {
         logi!("on_start by user remove");
         let _ = delete_user_de_dir(reason.extra_data.code);
@@ -202,5 +285,76 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         unload_sa_with_delay(DELAYED_UNLOAD_TIME_FOR_COMMON_EVENT_IN_SEC);
     } else {
         unload_sa();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn removed_want(keepdata: Option<&str>) -> HashMap<String, String> {
+        let mut want = HashMap::new();
+        want.insert(USER_ID.to_string(), "100".to_string());
+        want.insert(APP_ID.to_string(), "app_id_1".to_string());
+        want.insert(BUNDLE_NAME.to_string(), "com.example.app".to_string());
+        want.insert(APP_INDEX.to_string(), "0".to_string());
+        if let Some(keepdata) = keepdata {
+            want.insert(KEEP_DATA.to_string(), keepdata.to_string());
+        }
+        want
+    }
+
+    #[test]
+    fn test_parse_keepdata_true() {
+        let info = PackageRemovedWant(&removed_want(Some("true"))).parse().unwrap();
+        assert!(info.keepdata);
+    }
+
+    #[test]
+    fn test_parse_keepdata_false_or_missing() {
+        let info = PackageRemovedWant(&removed_want(Some("false"))).parse().unwrap();
+        assert!(!info.keepdata);
+        let info = PackageRemovedWant(&removed_want(None)).parse().unwrap();
+        assert!(!info.keepdata);
+    }
+
+    #[test]
+    fn test_parse_removed_want_groups() {
+        let mut want = removed_want(None);
+        want.insert(DEVELOPER_ID.to_string(), "1234.dev_1".to_string());
+        want.insert(GROUP_IDS.to_string(), "gid1,gid2".to_string());
+        let info = PackageRemovedWant(&want).parse().unwrap();
+        assert_eq!(info.developer_id, Some("1234.dev_1".to_string()));
+        assert_eq!(info.group_ids, Some(vec!["gid1".to_string(), "gid2".to_string()]));
+    }
+
+    fn cleared_want(with_groups: bool) -> HashMap<String, String> {
+        let mut want = HashMap::new();
+        want.insert(USER_ID.to_string(), "100".to_string());
+        want.insert(BUNDLE_NAME.to_string(), "com.example.app".to_string());
+        if with_groups {
+            want.insert(DEVELOPER_ID.to_string(), "1234.dev_1".to_string());
+            want.insert(GROUP_IDS.to_string(), "gid1,gid2".to_string());
+        }
+        want
+    }
+
+    #[test]
+    fn test_parse_cleared_want() {
+        let info = UninstallDataClearedWant(&cleared_want(true)).parse().unwrap();
+        assert_eq!(info.user_id, 100);
+        assert_eq!(info.bundle_name, "com.example.app");
+        assert_eq!(info.developer_id, Some("1234.dev_1".to_string()));
+        assert_eq!(info.group_ids, Some(vec!["gid1".to_string(), "gid2".to_string()]));
+        let info = UninstallDataClearedWant(&cleared_want(false)).parse().unwrap();
+        assert_eq!(info.developer_id, None);
+        assert_eq!(info.group_ids, None);
+    }
+
+    #[test]
+    fn test_parse_cleared_want_missing_bundle_fails() {
+        let mut want = cleared_want(false);
+        want.remove(BUNDLE_NAME);
+        assert!(UninstallDataClearedWant(&want).parse().is_err());
     }
 }
