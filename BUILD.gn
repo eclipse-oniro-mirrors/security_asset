@@ -52,7 +52,6 @@ group("saf_component") {
 group("asset_bin_test") {
   testonly = true
   deps = [
-    "test/asset/unittest/kits_ndk:asset_ndk_test",
     "test/asset/unittest/module_test:asset_dependency_test",
     "test/secure_access_fence/unittest/kits_ndk:saf_agent_fence_ndk_test",
     "test/secure_access_fence/gui_fence:saf_gui_cache_manager_test",
@@ -78,6 +77,7 @@ group("asset_bin_test") {
   ]
 
   if (not_emulator) {
+    deps += [ "test/asset/unittest/kits_ndk:asset_ndk_test" ]
     # Privacy computation tests currently require a non-emulator environment.
     deps += [
       "test/asset/unittest/privacy_protocol:privacy_protocol_test",
