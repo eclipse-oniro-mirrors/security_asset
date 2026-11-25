@@ -18,6 +18,26 @@ config("saf_idl_config") {
   include_dirs = [ "${target_gen_dir}" ]
 }
 
+# The IDL proxy is a shared library now. Its static BrokerDelegator must be
+# loaded for iface_cast() to find the proxy constructor, so dependents must
+# keep the DT_NEEDED entry even though they do not reference its symbols
+# directly. --no-as-needed is emitted after the global --as-needed.
+config("saf_proxy_link_config") {
+  ldflags = [ "-Wl,--no-as-needed" ]
+}
+
+# ROM optimization for the generated proxy/type translation unit only.
+# The global //build/config/compiler:default_optimization emits "-O2" through
+# the default configs, which are applied BEFORE a target's own "configs", so a
+# target-level "-Oz" in cflags would be overridden. Adding this config to the
+# target makes "-Oz" the last optimization flag, which is what actually takes
+# effect. The proxy is pure marshalling code, so size-optimizing it has no
+# meaningful performance cost.
+config("saf_proxy_size_config") {
+  cflags = [ "-Oz" ]
+  cflags_cc = [ "-Oz" ]
+}
+
 idl_gen_interface("secure_access_fence_interface") {
   sources = [ "ISecureAccessFence.idl" ]
   sources_common = [ "SecureAccessFenceType.idl" ]
@@ -29,8 +49,18 @@ idl_gen_interface("secure_access_fence_interface") {
   part_name = "asset"
 }
 
-ohos_static_library("secure_access_fence_proxy") {
-  public_configs = [ ":saf_idl_config" ]
+# IDL generated proxy/type code is a monolithic translation unit whose vtable
+# references every IPC method. When this target is a static library, every SDK
+# that links it embeds a full copy (including all feature-specific proxy code).
+# Build it as a shared library so the proxy/type code exists only once and all
+# client SDKs resolve it at runtime.
+ohos_shared_library("secure_access_fence_proxy") {
+  configs = [ ":saf_proxy_size_config" ]
+
+  public_configs = [
+    ":saf_idl_config",
+    ":saf_proxy_link_config",
+  ]
 
   output_values = get_target_outputs(":secure_access_fence_interface")
   sources = filter_include(output_values, [ "*secure_access_fence_proxy.cpp" ])

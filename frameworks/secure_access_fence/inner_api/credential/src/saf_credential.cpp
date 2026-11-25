@@ -51,7 +51,7 @@ sptr<ISecureAccessFence> GetProxy(std::recursive_mutex &mutex, bool needCheck = 
         }
     }
     sptr<IRemoteObject> service = samgrProxy->LoadSystemAbility(SAF_SERVICE_ID, WAIT_TIMEOUT_IN_SEC);
-    IF_TRUE_LOGE_RETURN_NULL(service == nullptr, "load service failed!");
+    IF_TRUE_LOGE_RETURN_NULL(service == nullptr, "load service failed");
 
     return iface_cast<ISecureAccessFence>(service);
 }
