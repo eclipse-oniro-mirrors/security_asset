@@ -28,10 +28,14 @@ ohos_static_library("privacy_client") {
     "-Werror",
     "-fPIC",
   ]
+  branch_protector_ret = "pac_ret"
   sanitize = {
+    integer_overflow = true
     cfi = true
-    cfi_cross_dso = true
     debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
   }
   subsystem_name = "security"
   part_name = "asset"

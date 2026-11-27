@@ -90,10 +90,14 @@ ohos_static_library("hifhe_api_mock") {
     "-Wall",
     "-Werror",
   ]
+  branch_protector_ret = "pac_ret"
   sanitize = {
+    integer_overflow = true
     cfi = true
-    cfi_cross_dso = true
     debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
   }
   subsystem_name = "security"
   part_name = "asset"
